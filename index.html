@@ -8,96 +8,36 @@
 <meta name="apple-mobile-web-app-title" content="Study">
 <title>Study</title>
 <style>
-  :root { --ink:#1b1f24; --muted:#5b6470; --line:#dde1e6; --accent:#1f3a5f; --on-accent:#ffffff; --bg:#ffffff; }
+  :root { --ink:#1b1f24; --muted:#5b6470; --accent:#1f3a5f; --on-accent:#ffffff; --bg:#ffffff; }
   @media (prefers-color-scheme: dark) {
-    :root { --ink:#e8eaed; --muted:#a0a8b3; --line:#2c3138; --accent:#8fb4e3; --on-accent:#14171b; --bg:#14171b; }
+    :root { --ink:#e8eaed; --muted:#a0a8b3; --accent:#8fb4e3; --on-accent:#14171b; --bg:#14171b; }
   }
   * { box-sizing: border-box; }
   body { margin:0; background:var(--bg); color:var(--ink); line-height:1.5;
          font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
   main { max-width:34rem; margin:0 auto; padding:2.5rem 1.25rem 3rem; }
   h1 { font-size:1.75rem; line-height:1.2; margin:0 0 .25rem; }
-  #status { color:var(--muted); margin:0 0 1.5rem; }
+  .status { color:var(--muted); margin:0 0 1.5rem; }
   .open { display:block; text-align:center; padding:1.1rem 1rem; border-radius:.75rem;
           background:var(--accent); color:var(--on-accent); font-weight:600; font-size:1.125rem; text-decoration:none; }
   a:focus-visible { outline:3px solid var(--accent); outline-offset:3px; }
-  h2 { font-size:1rem; margin:2.5rem 0 .25rem; }
-  ul { list-style:none; margin:0; padding:0; }
-  li a { display:block; padding:.75rem 0; border-bottom:1px solid var(--line); color:var(--ink); text-decoration:none; }
-  .when { display:block; font-weight:600; }
-  .what { display:block; color:var(--muted); font-size:.9375rem; }
-  [hidden] { display:none !important; }
 </style>
 </head>
 <body>
 <main>
   <h1 id="today">Study</h1>
-  <p id="status">Loading…</p>
-  <a id="open" class="open" target="_blank" rel="noopener" hidden>Open today's PDF</a>
-  <section id="past" hidden>
-    <h2>Past days</h2>
-    <ul id="list"></ul>
-  </section>
+  <p class="status">A new PDF is ready here every morning.</p>
+  <a id="open" class="open" target="_blank" rel="noopener">Open today's PDF</a>
 </main>
 <script>
-(async () => {
-  const $ = id => document.getElementById(id);
-  const localToday = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD in your time zone
-  const isDate = d => /^\d{4}-\d{2}-\d{2}$/.test(d || '');
-  const nice = (d, opts) => new Date(d + 'T00:00:00').toLocaleDateString(undefined, opts);
-  const ok = h => h && isDate(h.date) && typeof h.url === 'string' && h.url.startsWith('https://');
-  const load = async path => {
-    const r = await fetch(path + '?v=' + Date.now(), { cache: 'no-store' });
-    if (!r.ok) throw new Error(path);
-    return r.json();
-  };
+  const LINK = 'https://drive.google.com/drive/folders/1a-2dhwfPQ7gTWJ0pkccQ1p0h8Lze8TAH';
 
-  $('today').textContent = nice(localToday, { weekday: 'long', day: 'numeric', month: 'long' });
+  const open = document.getElementById('open');
+  open.href = LINK;
+  open.textContent = LINK.includes('/folders/') ? 'Open the study folder' : "Open today's PDF";
 
-  let today = {}, history = [];
-  try {
-    [today, history] = await Promise.all([load('data/today.json'), load('data/history.json')]);
-  } catch (e) {
-    $('status').textContent = "Couldn't load the PDF list. Check your connection and refresh.";
-    return;
-  }
-  history = (Array.isArray(history) ? history : []).filter(ok).sort((a, b) => b.date.localeCompare(a.date));
-
-  const latest = ok(today) ? today : history[0];
-  const btn = $('open');
-  if (latest && latest.date === localToday) {
-    $('status').textContent = "Today's PDF is ready" + (latest.pages ? ` (${latest.pages} pages).` : '.');
-    btn.textContent = "Open today's PDF";
-    btn.href = latest.url;
-    btn.hidden = false;
-  } else if (latest) {
-    $('status').textContent = `Today's PDF isn't up yet. The latest is from ${nice(latest.date, { day: 'numeric', month: 'long' })}.`;
-    btn.textContent = 'Open the latest PDF';
-    btn.href = latest.url;
-    btn.hidden = false;
-  } else {
-    $('status').textContent = 'No PDFs yet. The first one appears here after the next upload.';
-  }
-
-  const past = history.filter(h => !latest || h.date !== latest.date);
-  if (past.length) {
-    for (const h of past) {
-      const a = document.createElement('a');
-      a.href = h.url; a.target = '_blank'; a.rel = 'noopener';
-      const when = document.createElement('span');
-      when.className = 'when';
-      when.textContent = nice(h.date, { weekday: 'short', day: 'numeric', month: 'short' });
-      const what = document.createElement('span');
-      what.className = 'what';
-      what.textContent = (h.title || 'Study PDF') + (h.pages ? ` (${h.pages} pages)` : '');
-      a.append(when, what);
-      const li = document.createElement('li');
-      li.append(a);
-      $('list').append(li);
-    }
-    $('past').hidden = false;
-  }
-})();
+  document.getElementById('today').textContent =
+    new Date().toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' });
 </script>
 </body>
 </html>
