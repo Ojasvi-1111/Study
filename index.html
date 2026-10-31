@@ -3,189 +3,252 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Study">
 <title>Study</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&display=swap" rel="stylesheet">
 <style>
-  :root { --paper:#FFF1F7; --a:#FF48B0; --b:#3255A4; --text:#3255A4; --btn-text:#FFFFFF;
-          --dx:5px; --dy:-4px; --rot:-8deg; color-scheme: light; }
-  * { box-sizing: border-box; }
-  html, body { margin:0; min-height:100%; }
-  body { background:var(--paper); color:var(--text); overflow-x:hidden;
-         font-family:"Bricolage Grotesque", system-ui, sans-serif; font-optical-sizing:auto;
-         -webkit-tap-highlight-color: transparent; }
+  :root { --smoke:#2E3236; --metal:#7D868E; --hi:#C7CDD1; --cyan:#00E5FF; color-scheme:dark; }
+  * { box-sizing:border-box; }
+  html, body { margin:0; min-height:100%; background:#000; }
+  body { color:var(--hi); overflow-x:hidden; -webkit-font-smoothing:antialiased;
+         font-family:"Geist", system-ui, -apple-system, "Segoe UI", sans-serif; -webkit-tap-highlight-color:transparent; }
 
-  /* paper grain over everything */
-  body::after { content:""; position:fixed; inset:0; z-index:2; pointer-events:none; opacity:.22; mix-blend-mode:multiply;
-    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .6 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  /* fine film grain */
+  body::after { content:""; position:fixed; inset:0; z-index:4; pointer-events:none; opacity:.05;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .6 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
 
-  /* generated shapes */
-  #art { position:fixed; inset:0; width:100%; height:100%; z-index:0; }
-  #art > :not(defs) { mix-blend-mode:multiply; animation:pop .8s ease-out both; }
-  @keyframes pop { from { opacity:0; } }
+  #sky { position:fixed; inset:0; width:100%; height:100%; object-fit:cover; opacity:0; transition:opacity 1.8s ease; }
+  #sky.ready { opacity:1; }
 
-  main { position:relative; z-index:1; min-height:100vh; min-height:100dvh; max-width:36rem; margin:0 auto;
-         padding:clamp(1.25rem,5vw,2.5rem); display:flex; flex-direction:column; justify-content:center; gap:1.25rem; }
+  #meteors { position:fixed; inset:0; z-index:1; pointer-events:none; overflow:hidden; }
+  .meteor { position:absolute; width:180px; height:1.5px; border-radius:2px; transform-origin:0 50%;
+            background:linear-gradient(90deg, rgba(199,205,209,0), rgba(199,205,209,.6) 70%, #fff);
+            filter:drop-shadow(0 0 6px rgba(255,255,255,.55)); }
 
-  /* corner sticker */
-  .badge { position:absolute; top:clamp(1rem,4vw,2rem); right:clamp(1rem,4vw,2rem); width:clamp(6rem,26vw,8.5rem);
-           transform:rotate(var(--rot)); z-index:1; }
-  .badge circle { fill:var(--a); }
-  .badge text { fill:var(--text); font-family:inherit; font-weight:700; font-size:10.5px; }
-  .badge .mid { font-size:28px; }
+  main { position:relative; z-index:2; min-height:100vh; min-height:100dvh; display:flex; flex-direction:column;
+         align-items:center; justify-content:center; text-align:center;
+         padding:calc(env(safe-area-inset-top) + 2rem) 1.5rem calc(env(safe-area-inset-bottom) + 2rem);
+         opacity:0; transition:opacity 1.2s ease .5s; }
+  body.ready main { opacity:1; }
 
-  /* the date */
-  .poster { margin:0; font-weight:800; line-height:.82; display:flex; flex-direction:column; }
-  .wd { font-size:clamp(3.25rem,17vw,6.5rem); font-stretch:75%; letter-spacing:-.02em; }
-  .num { position:relative; display:inline-block; align-self:flex-start; font-size:clamp(11rem,64vw,21rem);
-         font-stretch:75%; letter-spacing:-.04em; line-height:.78; }
-  .ink.a { color:var(--a); }
-  .ink.b { position:absolute; left:0; top:0; color:var(--b); mix-blend-mode:multiply;
-           transform:translate(var(--dx),var(--dy)); animation:reg 1s cubic-bezier(.2,.8,.2,1) both; }
-  @keyframes reg { from { transform:translate(calc(var(--dx) * 6), calc(var(--dy) * 6)); } }
-  .mo { font-size:clamp(2rem,10vw,3.5rem); font-weight:300; font-stretch:100%; letter-spacing:-.01em; margin-top:.15em; }
+  .day { margin:0; font-size:clamp(1rem,2.2vw,1.375rem); font-weight:400; color:var(--metal);
+         text-shadow:0 0 24px rgba(0,0,0,.8); }
+  h1 { margin:.1em 0 0; font-size:clamp(3.5rem,11vw,8.5rem); font-weight:200; line-height:1; letter-spacing:-.035em;
+       color:var(--hi); text-shadow:0 0 40px rgba(0,0,0,.7); }
+  .count { margin:1.1rem 0 0; font-size:clamp(1.0625rem,2.4vw,1.5rem); font-weight:400; color:var(--metal);
+           text-shadow:0 0 24px rgba(0,0,0,.8); }
+  .count strong { color:var(--cyan); font-weight:500; font-variant-numeric:tabular-nums;
+                  text-shadow:0 0 18px rgba(0,229,255,.45); }
 
-  /* status strip */
-  .tape { align-self:flex-start; margin:.5rem 0 0; max-width:28rem; background:var(--paper); color:var(--text);
-          border:2px solid var(--text); padding:.55rem .85rem; font-size:1.0625rem; font-weight:600; line-height:1.35;
-          transform:rotate(-1.5deg); box-shadow:4px 4px 0 var(--a); }
+  /* dark smoked glass */
+  .glass { margin-top:clamp(2.25rem,6vh,3.5rem); display:inline-block; padding:1.15rem 2.6rem; border-radius:18px;
+           color:var(--hi); font-size:clamp(1.0625rem,2vw,1.25rem); font-weight:500; letter-spacing:.01em; text-decoration:none;
+           background:linear-gradient(180deg, rgba(46,50,54,.55), rgba(46,50,54,.35));
+           -webkit-backdrop-filter:blur(14px) saturate(130%); backdrop-filter:blur(14px) saturate(130%);
+           border:1px solid rgba(0,229,255,.6);
+           box-shadow:0 0 22px rgba(0,229,255,.28), 0 0 2px rgba(0,229,255,.8),
+                      inset 0 1px 0 rgba(199,205,209,.22), inset 0 0 22px rgba(0,229,255,.10);
+           transition:transform .14s ease, box-shadow .14s ease; }
+  .glass:active { transform:scale(.97) translateY(1px);
+                  box-shadow:0 0 12px rgba(0,229,255,.2), 0 0 2px rgba(0,229,255,.7),
+                             inset 0 1px 0 rgba(199,205,209,.12), inset 0 2px 14px rgba(0,0,0,.45); }
+  .glass:focus-visible { outline:2px solid var(--cyan); outline-offset:5px; }
 
-  /* ticket button */
-  .ticket-wrap { filter:drop-shadow(6px 6px 0 var(--a)); transition:transform .12s ease, filter .12s ease; border-radius:.6rem; }
-  .ticket-wrap:active { transform:translate(4px,4px); filter:drop-shadow(2px 2px 0 var(--a)); }
-  .ticket-wrap:has(.ticket:focus-visible) { outline:3px solid var(--text); outline-offset:6px; }
-  .ticket { display:block; text-align:center; padding:1.2rem 2rem; border-radius:.6rem; outline:none;
-            background:var(--b); color:var(--btn-text); font-weight:700; font-size:1.3rem; text-decoration:none;
-            -webkit-mask: radial-gradient(circle at 0 50%, #0000 .7rem, #000 calc(.7rem + .5px)) left / 51% 100% no-repeat,
-                          radial-gradient(circle at 100% 50%, #0000 .7rem, #000 calc(.7rem + .5px)) right / 51% 100% no-repeat;
-                    mask: radial-gradient(circle at 0 50%, #0000 .7rem, #000 calc(.7rem + .5px)) left / 51% 100% no-repeat,
-                          radial-gradient(circle at 100% 50%, #0000 .7rem, #000 calc(.7rem + .5px)) right / 51% 100% no-repeat; }
-  .ticket:focus-visible { text-decoration:underline; }
-
-  .foot { margin:.25rem 0 0; font-size:.9375rem; font-weight:500; }
+  /* sound toggle */
+  .sound { position:fixed; z-index:3; top:calc(env(safe-area-inset-top) + 1rem); right:calc(env(safe-area-inset-right) + 1rem);
+           width:44px; height:44px; border-radius:50%; display:grid; place-items:center; padding:0; cursor:pointer;
+           color:var(--metal); background:rgba(46,50,54,.45); border:1px solid rgba(199,205,209,.22);
+           -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
+           transition:color .2s, border-color .2s, box-shadow .2s; }
+  .sound svg { width:20px; height:20px; }
+  .sound .waves { opacity:0; transition:opacity .2s; }
+  .sound[aria-pressed="true"] { color:var(--cyan); border-color:rgba(0,229,255,.6); box-shadow:0 0 14px rgba(0,229,255,.3); }
+  .sound[aria-pressed="true"] .waves { opacity:1; }
+  .sound:focus-visible { outline:2px solid var(--cyan); outline-offset:3px; }
 
   @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after { animation:none !important; transition:none !important; }
+    *, *::before, *::after { transition:none !important; animation:none !important; }
   }
 </style>
 </head>
 <body ontouchstart="">
-<svg id="art" aria-hidden="true" viewBox="0 0 100 160" preserveAspectRatio="xMidYMid slice"></svg>
+<img id="sky" alt="">
+<div id="meteors" aria-hidden="true"></div>
+
+<button class="sound" id="sound" type="button" aria-pressed="false" aria-label="Turn ambient sound on">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M4 9v6h4l5 4V5L8 9H4z"/>
+    <g class="waves"><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19 6a8.5 8.5 0 0 1 0 12"/></g>
+  </svg>
+</button>
 
 <main>
-  <svg class="badge" viewBox="0 0 100 100" aria-hidden="true" xmlns:xlink="http://www.w3.org/1999/xlink">
-    <defs><path id="ring" d="M50,50 m-36,0 a36,36 0 1,1 72,0 a36,36 0 1,1 -72,0"/></defs>
-    <circle cx="50" cy="50" r="48"/>
-    <text><textPath id="ringText" href="#ring" xlink:href="#ring" textLength="224" lengthAdjust="spacing">good morning ✦ good morning ✦</textPath></text>
-    <text class="mid" x="50" y="60" text-anchor="middle">✦</text>
-  </svg>
-
-  <h1 class="poster">
-    <span class="wd" id="wd">Today</span>
-    <span class="num"><span class="ink a" id="numA">1</span><span class="ink b" id="numB" aria-hidden="true">1</span></span>
-    <span class="mo" id="mo"></span>
-  </h1>
-
-  <p class="tape" id="status">Today's PDF is ready.</p>
-  <div class="ticket-wrap"><a id="open" class="ticket" target="_blank" rel="noopener">Open today's PDF</a></div>
-  <p class="foot">A new poster every morning.</p>
+  <p class="day" id="day">Today</p>
+  <h1 id="date">Study</h1>
+  <p class="count" id="count"></p>
+  <a id="open" class="glass" target="_blank" rel="noopener">Open today's PDF</a>
 </main>
 
 <script>
   const LINK = 'https://drive.google.com/drive/folders/1a-2dhwfPQ7gTWJ0pkccQ1p0h8Lze8TAH';
+  const C = { smoke:'#2E3236', metal:'#7D868E', hi:'#C7CDD1', white:'#FFFFFF' };
 
-  // Same poster all day, a new one tomorrow
+  /* ---------- date, countdown, button ---------- */
   const now = new Date();
+  document.getElementById('day').textContent = now.toLocaleDateString(undefined, { weekday:'long' });
+  document.getElementById('date').textContent = now.toLocaleDateString(undefined, { day:'numeric', month:'long' });
+
+  const daysLeft = Math.round((Date.UTC(2028, 0, 1) - Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())) / 86400000);
+  const count = document.getElementById('count');
+  if (daysLeft > 0) {
+    const n = document.createElement('strong');
+    n.textContent = daysLeft.toLocaleString();
+    count.replaceChildren(n, ` ${daysLeft === 1 ? 'day' : 'days'} to go to 2028`);
+  } else {
+    count.textContent = "It's 2028.";
+  }
+
+  const open = document.getElementById('open');
+  open.href = LINK;
+  open.textContent = LINK.includes('/folders/') ? 'Open the study folder' : "Open today's PDF";
+
+  /* ---------- today's nebula (same all day, new tomorrow) ---------- */
   const seed = now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.getDate();
   const rand = (a => () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a);
     t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; })(seed);
-  const between = (lo, hi) => lo + rand() * (hi - lo);
-  const pick = list => list[Math.floor(rand() * list.length)];
+  const R = (lo, hi) => lo + rand() * (hi - lo);
+  const f = n => n.toFixed(1);
+  const many = (count, make) => Array.from({ length: count }, make).join('');
 
-  // Two-ink palettes based on real risograph inks
-  const palettes = [
-    { paper:'#FFF1F7', a:'#FF48B0', b:'#3255A4', text:'#3255A4' },
-    { paper:'#F3FBF8', a:'#FFE800', b:'#00838A', text:'#00666B' },
-    { paper:'#F2F5FF', a:'#FF6C2F', b:'#3D5588', text:'#3D5588' },
-    { paper:'#F7F4FF', a:'#00A95C', b:'#765BA7', text:'#5E468F' },
-    { paper:'#FFFFFF', a:'#FFB511', b:'#765BA7', text:'#5E468F' },
-    { paper:'#F0F9F9', a:'#FF7477', b:'#00838A', text:'#00666B' },
-    { paper:'#FFF4F4', a:'#F15060', b:'#3D5588', text:'#3D5588' },
-    { paper:'#F1FAFB', a:'#FF48B0', b:'#00838A', text:'#00666B' }
-  ];
-  const p = pick(palettes);
-  const root = document.documentElement.style;
-  root.setProperty('--paper', p.paper);
-  root.setProperty('--a', p.a);
-  root.setProperty('--b', p.b);
-  root.setProperty('--text', p.text);
-  root.setProperty('--dx', between(-9, 9).toFixed(1) + 'px');
-  root.setProperty('--dy', between(-7, 7).toFixed(1) + 'px');
-  root.setProperty('--rot', between(-18, 18).toFixed(1) + 'deg');
+  function blob(cx, cy, rx, ry, n = 9, j = .35) {
+    const p = [];
+    for (let i = 0; i < n; i++) {
+      const a = i / n * Math.PI * 2, k = 1 + (rand() * 2 - 1) * j;
+      p.push([cx + Math.cos(a) * rx * k, cy + Math.sin(a) * ry * k]);
+    }
+    let d = `M${f(p[0][0])} ${f(p[0][1])}`;
+    for (let i = 0; i < n; i++) {
+      const p0 = p[(i - 1 + n) % n], p1 = p[i], p2 = p[(i + 1) % n], p3 = p[(i + 2) % n];
+      d += ` C${f(p1[0] + (p2[0] - p0[0]) / 6)} ${f(p1[1] + (p2[1] - p0[1]) / 6)}`
+         + ` ${f(p2[0] - (p3[0] - p1[0]) / 6)} ${f(p2[1] - (p3[1] - p1[1]) / 6)} ${f(p2[0])} ${f(p2[1])}`;
+    }
+    return d + 'Z';
+  }
 
-  // Date
-  document.getElementById('wd').textContent = now.toLocaleDateString(undefined, { weekday: 'long' });
-  document.getElementById('numA').textContent = now.getDate();
-  document.getElementById('numB').textContent = now.getDate();
-  document.getElementById('mo').textContent = now.toLocaleDateString(undefined, { month: 'long' });
+  const cx = R(400, 600), cy = R(380, 560), tilt = R(-40, 40);
+  const around = (sx, sy) => [cx + R(-sx, sx), cy + R(-sy, sy)];
+  const haze  = many(3, () => { const [x, y] = around(140, 90);  return `<path d="${blob(x, y, R(260, 420), R(150, 250))}"/>`; });
+  const body  = many(6, () => { const [x, y] = around(240, 130); return `<path d="${blob(x, y, R(90, 220), R(50, 130))}"/>`; });
+  const dust  = many(3, () => { const [x, y] = around(200, 110); return `<path d="${blob(x, y, R(120, 260), R(16, 42), 10, .45)}"/>`; });
+  const wisps = many(6, () => { const [x, y] = around(220, 120); return `<path d="${blob(x, y, R(40, 130), R(18, 70), 8, .5)}"/>`; });
 
-  // Sticker greeting
-  const h = now.getHours();
-  const greet = (h < 5 || h >= 21) ? 'night reading' : h < 12 ? 'good morning' : h < 17 ? 'good afternoon' : 'good evening';
-  document.getElementById('ringText').textContent = (greet + ' ✦ ').repeat(2);
+  const dot = (x, y, r, o, c) => `<circle cx="${f(x)}" cy="${f(y)}" r="${r.toFixed(2)}" fill="${c}" opacity="${o.toFixed(2)}"/>`;
+  const farStars  = many(520, () => dot(R(0, 1000), R(0, 1000), R(.35, .9), R(.18, .6), rand() < .75 ? C.hi : C.metal));
+  const nearStars = many(60,  () => dot(R(0, 1000), R(0, 1000), R(.8, 1.5), R(.55, .95), C.white));
+  const brightStars = many(4, () => {
+    const x = R(70, 930), y = R(70, 930), L = R(12, 28);
+    return `<circle cx="${f(x)}" cy="${f(y)}" r="7" fill="${C.hi}" opacity=".35" filter="url(#glow)"/>`
+      + `<polygon points="${f(x - L)},${f(y)} ${f(x)},${f(y - .6)} ${f(x + L)},${f(y)} ${f(x)},${f(y + .6)}" fill="${C.white}" opacity=".7"/>`
+      + `<polygon points="${f(x)},${f(y - L)} ${f(x + .6)},${f(y)} ${f(x)},${f(y + L)} ${f(x - .6)},${f(y)}" fill="${C.white}" opacity=".7"/>`
+      + `<circle cx="${f(x)}" cy="${f(y)}" r="1.7" fill="${C.white}"/>`;
+  });
 
-  // Button
-  const isFolder = LINK.includes('/folders/');
-  const open = document.getElementById('open');
-  open.href = LINK;
-  open.textContent = isFolder ? 'Open the study folder' : "Open today's PDF";
-  document.getElementById('status').textContent = isFolder
-    ? "Today's PDF is waiting in your study folder."
-    : "Today's PDF is ready.";
+  const region = 'filterUnits="userSpaceOnUse" x="-300" y="-300" width="1600" height="1600"';
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1000" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid slice">
+<defs>
+<filter id="haze" ${region}><feGaussianBlur stdDeviation="55"/></filter>
+<filter id="smoke" ${region}><feTurbulence type="fractalNoise" baseFrequency=".006" numOctaves="4" seed="${seed % 997}" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="140" xChannelSelector="R" yChannelSelector="G" result="d"/><feGaussianBlur in="d" stdDeviation="14"/></filter>
+<filter id="wisp" ${region}><feTurbulence type="fractalNoise" baseFrequency=".018" numOctaves="3" seed="${(seed * 7) % 991}" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="70" xChannelSelector="R" yChannelSelector="B" result="d"/><feGaussianBlur in="d" stdDeviation="4"/></filter>
+<filter id="core" ${region}><feGaussianBlur stdDeviation="34"/></filter>
+<filter id="glow" x="-300%" y="-300%" width="700%" height="700%"><feGaussianBlur stdDeviation="3"/></filter>
+<radialGradient id="vig" cx="50%" cy="50%" r="72%"><stop offset="50%" stop-color="#000" stop-opacity="0"/><stop offset="100%" stop-color="#000" stop-opacity=".92"/></radialGradient>
+</defs>
+<rect width="1000" height="1000" fill="#000"/>
+<g>${farStars}</g>
+<g transform="rotate(${f(tilt)} ${f(cx)} ${f(cy)})">
+<g filter="url(#haze)" fill="${C.smoke}" opacity=".95">${haze}</g>
+<g filter="url(#smoke)" fill="${C.metal}" opacity=".5">${body}</g>
+<circle cx="${f(cx)}" cy="${f(cy)}" r="${f(R(40, 70))}" fill="${C.hi}" opacity=".28" filter="url(#core)"/>
+<g filter="url(#smoke)" fill="#000" opacity=".7">${dust}</g>
+<g filter="url(#wisp)" fill="${C.hi}" opacity=".42" style="mix-blend-mode:screen">${wisps}</g>
+</g>
+<g>${nearStars}${brightStars}</g>
+<rect width="1000" height="1000" fill="url(#vig)"/>
+</svg>`;
 
-  // Generative shapes
-  const svg = document.getElementById('art');
-  const NS = 'http://www.w3.org/2000/svg';
-  const el = (tag, attrs) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); return e; };
+  const sky = document.getElementById('sky');
+  let shown = false;
+  const ready = () => { if (shown) return; shown = true; sky.classList.add('ready'); document.body.classList.add('ready'); };
+  sky.onload = ready;
+  sky.onerror = ready;
+  setTimeout(ready, 2500);
+  sky.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
 
-  const defs = el('defs', {});
-  const stripes = el('pattern', { id:'stripes', width:4, height:4, patternUnits:'userSpaceOnUse',
-                                  patternTransform:'rotate(' + Math.round(between(0, 180)) + ')' });
-  stripes.append(el('rect', { width:2, height:4, fill:p.b }));
-  const dots = el('pattern', { id:'dots', width:3, height:3, patternUnits:'userSpaceOnUse' });
-  dots.append(el('circle', { cx:1.5, cy:1.5, r:.8, fill:p.a }));
-  defs.append(stripes, dots);
-  svg.append(defs);
+  /* ---------- shooting stars ---------- */
+  const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const meteors = document.getElementById('meteors');
+  function meteor() {
+    const leftward = Math.random() < .5;
+    const ang = 18 + Math.random() * 28;
+    const a = leftward ? 180 - ang : ang;
+    const m = document.createElement('div');
+    m.className = 'meteor';
+    m.style.left = (leftward ? .3 + Math.random() * .7 : Math.random() * .7) * innerWidth + 'px';
+    m.style.top = Math.random() * .45 * innerHeight + 'px';
+    meteors.append(m);
+    const dist = 280 + Math.random() * 380;
+    m.animate([
+      { transform:`rotate(${a}deg) translateX(0px)`, opacity:0 },
+      { transform:`rotate(${a}deg) translateX(${dist * .2}px)`, opacity:1, offset:.2 },
+      { transform:`rotate(${a}deg) translateX(${dist}px)`, opacity:0 }
+    ], { duration:900 + Math.random() * 700, easing:'cubic-bezier(.3,.6,.3,1)' }).onfinish = () => m.remove();
+  }
+  if (!calm) setTimeout(function loop() {
+    if (!document.hidden) meteor();
+    setTimeout(loop, 5000 + Math.random() * 9000);
+  }, 3000);
 
-  const fills = [p.a, p.b, 'url(#stripes)', 'url(#dots)'];
-  const makers = [
-    () => el('circle', { cx:between(0,100), cy:between(0,160), r:between(10,30) }),
-    () => { const x = between(0,100), y = between(0,160), s = between(14,34);
-            return el('path', { d:`M${x-s} ${y} A${s} ${s} 0 0 1 ${x+s} ${y} Z` }); },
-    () => { const x = between(-10,90), y = between(0,140), w = between(18,40), hh = between(30,70);
-            return el('path', { d:`M${x} ${y+hh} V${y+w/2} A${w/2} ${w/2} 0 0 1 ${x+w} ${y+w/2} V${y+hh} Z` }); },
-    () => { const x = between(10,90), y = between(10,150), R = between(8,16), pts = [];
-            for (let i = 0; i < 16; i++) { const rad = i % 2 ? R * .55 : R, ang = i * Math.PI / 8;
-              pts.push((x + rad * Math.cos(ang)).toFixed(1) + ',' + (y + rad * Math.sin(ang)).toFixed(1)); }
-            return el('polygon', { points:pts.join(' ') }); },
-    () => { const x = between(-5,55), y = between(0,160), pts = [];
-            for (let i = 0; i < 9; i++) pts.push((x + i * 5) + ',' + (y + (i % 2 ? 6 : 0)));
-            return el('polyline', { points:pts.join(' '), fill:'none', 'stroke-width':2.2, 'stroke-linejoin':'round', stroke:pick([p.a, p.b]) }); },
-    () => { const x = between(-10,55), y = between(0,160); let d = `M${x} ${y}`;
-            for (let i = 0; i < 5; i++) d += ' q 4 -6 8 0 t 8 0';
-            return el('path', { d, fill:'none', 'stroke-width':2.2, 'stroke-linecap':'round', stroke:pick([p.a, p.b]) }); }
-  ];
-
-  const shapes = [el('circle', { cx:between(20,80), cy:between(20,140), r:between(28,40) })];
-  for (let i = 0; i < 7; i++) shapes.push(pick(makers)());
-  shapes.forEach((s, i) => {
-    if (!s.getAttribute('stroke')) s.setAttribute('fill', pick(fills));
-    s.setAttribute('transform', `rotate(${between(-30,30).toFixed(1)} 50 80)`);
-    s.style.animationDelay = (i * 70) + 'ms';
-    svg.append(s);
+  /* ---------- optional ambient hum (made in the browser) ---------- */
+  const toggle = document.getElementById('sound');
+  let ctx, master, on = false;
+  function buildAudio() {
+    ctx = new (window.AudioContext || window.webkitAudioContext)();
+    master = ctx.createGain();
+    master.gain.value = 0;
+    master.connect(ctx.destination);
+    const lp = ctx.createBiquadFilter();
+    lp.type = 'lowpass'; lp.frequency.value = 420; lp.Q.value = .6;
+    lp.connect(master);
+    [[55, 'sine', .22], [82.4, 'sine', .12], [110, 'triangle', .05]].forEach(([freq, type, g]) => {
+      const o = ctx.createOscillator(); o.type = type; o.frequency.value = freq; o.detune.value = Math.random() * 8 - 4;
+      const gain = ctx.createGain(); gain.gain.value = g;
+      o.connect(gain).connect(lp); o.start();
+    });
+    const len = ctx.sampleRate * 3, buf = ctx.createBuffer(1, len, ctx.sampleRate), data = buf.getChannelData(0);
+    let last = 0;
+    for (let i = 0; i < len; i++) { last = (last + .02 * (Math.random() * 2 - 1)) / 1.02; data[i] = last * 3.5; }
+    const noise = ctx.createBufferSource(); noise.buffer = buf; noise.loop = true;
+    const ng = ctx.createGain(); ng.gain.value = .35;
+    noise.connect(ng).connect(lp); noise.start();
+    const lfo = ctx.createOscillator(); lfo.frequency.value = .04;
+    const depth = ctx.createGain(); depth.gain.value = 180;
+    lfo.connect(depth).connect(lp.frequency); lfo.start();
+  }
+  toggle.addEventListener('click', async () => {
+    if (!ctx) buildAudio();
+    on = !on;
+    if (on) await ctx.resume();
+    const t = ctx.currentTime;
+    master.gain.cancelScheduledValues(t);
+    master.gain.setValueAtTime(master.gain.value, t);
+    master.gain.linearRampToValueAtTime(on ? .5 : 0, t + 1.5);
+    toggle.setAttribute('aria-pressed', String(on));
+    toggle.setAttribute('aria-label', on ? 'Turn ambient sound off' : 'Turn ambient sound on');
   });
 </script>
 </body>
