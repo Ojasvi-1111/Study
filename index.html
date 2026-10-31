@@ -2,42 +2,191 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="color-scheme" content="light dark">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Study">
 <title>Study</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&display=swap" rel="stylesheet">
 <style>
-  :root { --ink:#1b1f24; --muted:#5b6470; --accent:#1f3a5f; --on-accent:#ffffff; --bg:#ffffff; }
-  @media (prefers-color-scheme: dark) {
-    :root { --ink:#e8eaed; --muted:#a0a8b3; --accent:#8fb4e3; --on-accent:#14171b; --bg:#14171b; }
-  }
+  :root { --paper:#FFF1F7; --a:#FF48B0; --b:#3255A4; --text:#3255A4; --btn-text:#FFFFFF;
+          --dx:5px; --dy:-4px; --rot:-8deg; color-scheme: light; }
   * { box-sizing: border-box; }
-  body { margin:0; background:var(--bg); color:var(--ink); line-height:1.5;
-         font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
-  main { max-width:34rem; margin:0 auto; padding:2.5rem 1.25rem 3rem; }
-  h1 { font-size:1.75rem; line-height:1.2; margin:0 0 .25rem; }
-  .status { color:var(--muted); margin:0 0 1.5rem; }
-  .open { display:block; text-align:center; padding:1.1rem 1rem; border-radius:.75rem;
-          background:var(--accent); color:var(--on-accent); font-weight:600; font-size:1.125rem; text-decoration:none; }
-  a:focus-visible { outline:3px solid var(--accent); outline-offset:3px; }
+  html, body { margin:0; min-height:100%; }
+  body { background:var(--paper); color:var(--text); overflow-x:hidden;
+         font-family:"Bricolage Grotesque", system-ui, sans-serif; font-optical-sizing:auto;
+         -webkit-tap-highlight-color: transparent; }
+
+  /* paper grain over everything */
+  body::after { content:""; position:fixed; inset:0; z-index:2; pointer-events:none; opacity:.22; mix-blend-mode:multiply;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .6 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+
+  /* generated shapes */
+  #art { position:fixed; inset:0; width:100%; height:100%; z-index:0; }
+  #art > :not(defs) { mix-blend-mode:multiply; animation:pop .8s ease-out both; }
+  @keyframes pop { from { opacity:0; } }
+
+  main { position:relative; z-index:1; min-height:100vh; min-height:100dvh; max-width:36rem; margin:0 auto;
+         padding:clamp(1.25rem,5vw,2.5rem); display:flex; flex-direction:column; justify-content:center; gap:1.25rem; }
+
+  /* corner sticker */
+  .badge { position:absolute; top:clamp(1rem,4vw,2rem); right:clamp(1rem,4vw,2rem); width:clamp(6rem,26vw,8.5rem);
+           transform:rotate(var(--rot)); z-index:1; }
+  .badge circle { fill:var(--a); }
+  .badge text { fill:var(--text); font-family:inherit; font-weight:700; font-size:10.5px; }
+  .badge .mid { font-size:28px; }
+
+  /* the date */
+  .poster { margin:0; font-weight:800; line-height:.82; display:flex; flex-direction:column; }
+  .wd { font-size:clamp(3.25rem,17vw,6.5rem); font-stretch:75%; letter-spacing:-.02em; }
+  .num { position:relative; display:inline-block; align-self:flex-start; font-size:clamp(11rem,64vw,21rem);
+         font-stretch:75%; letter-spacing:-.04em; line-height:.78; }
+  .ink.a { color:var(--a); }
+  .ink.b { position:absolute; left:0; top:0; color:var(--b); mix-blend-mode:multiply;
+           transform:translate(var(--dx),var(--dy)); animation:reg 1s cubic-bezier(.2,.8,.2,1) both; }
+  @keyframes reg { from { transform:translate(calc(var(--dx) * 6), calc(var(--dy) * 6)); } }
+  .mo { font-size:clamp(2rem,10vw,3.5rem); font-weight:300; font-stretch:100%; letter-spacing:-.01em; margin-top:.15em; }
+
+  /* status strip */
+  .tape { align-self:flex-start; margin:.5rem 0 0; max-width:28rem; background:var(--paper); color:var(--text);
+          border:2px solid var(--text); padding:.55rem .85rem; font-size:1.0625rem; font-weight:600; line-height:1.35;
+          transform:rotate(-1.5deg); box-shadow:4px 4px 0 var(--a); }
+
+  /* ticket button */
+  .ticket-wrap { filter:drop-shadow(6px 6px 0 var(--a)); transition:transform .12s ease, filter .12s ease; border-radius:.6rem; }
+  .ticket-wrap:active { transform:translate(4px,4px); filter:drop-shadow(2px 2px 0 var(--a)); }
+  .ticket-wrap:has(.ticket:focus-visible) { outline:3px solid var(--text); outline-offset:6px; }
+  .ticket { display:block; text-align:center; padding:1.2rem 2rem; border-radius:.6rem; outline:none;
+            background:var(--b); color:var(--btn-text); font-weight:700; font-size:1.3rem; text-decoration:none;
+            -webkit-mask: radial-gradient(circle at 0 50%, #0000 .7rem, #000 calc(.7rem + .5px)) left / 51% 100% no-repeat,
+                          radial-gradient(circle at 100% 50%, #0000 .7rem, #000 calc(.7rem + .5px)) right / 51% 100% no-repeat;
+                    mask: radial-gradient(circle at 0 50%, #0000 .7rem, #000 calc(.7rem + .5px)) left / 51% 100% no-repeat,
+                          radial-gradient(circle at 100% 50%, #0000 .7rem, #000 calc(.7rem + .5px)) right / 51% 100% no-repeat; }
+  .ticket:focus-visible { text-decoration:underline; }
+
+  .foot { margin:.25rem 0 0; font-size:.9375rem; font-weight:500; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation:none !important; transition:none !important; }
+  }
 </style>
 </head>
-<body>
+<body ontouchstart="">
+<svg id="art" aria-hidden="true" viewBox="0 0 100 160" preserveAspectRatio="xMidYMid slice"></svg>
+
 <main>
-  <h1 id="today">Study</h1>
-  <p class="status">A new PDF is ready here every morning.</p>
-  <a id="open" class="open" target="_blank" rel="noopener">Open today's PDF</a>
+  <svg class="badge" viewBox="0 0 100 100" aria-hidden="true" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <defs><path id="ring" d="M50,50 m-36,0 a36,36 0 1,1 72,0 a36,36 0 1,1 -72,0"/></defs>
+    <circle cx="50" cy="50" r="48"/>
+    <text><textPath id="ringText" href="#ring" xlink:href="#ring" textLength="224" lengthAdjust="spacing">good morning ✦ good morning ✦</textPath></text>
+    <text class="mid" x="50" y="60" text-anchor="middle">✦</text>
+  </svg>
+
+  <h1 class="poster">
+    <span class="wd" id="wd">Today</span>
+    <span class="num"><span class="ink a" id="numA">1</span><span class="ink b" id="numB" aria-hidden="true">1</span></span>
+    <span class="mo" id="mo"></span>
+  </h1>
+
+  <p class="tape" id="status">Today's PDF is ready.</p>
+  <div class="ticket-wrap"><a id="open" class="ticket" target="_blank" rel="noopener">Open today's PDF</a></div>
+  <p class="foot">A new poster every morning.</p>
 </main>
+
 <script>
   const LINK = 'https://drive.google.com/drive/folders/1a-2dhwfPQ7gTWJ0pkccQ1p0h8Lze8TAH';
 
+  // Same poster all day, a new one tomorrow
+  const now = new Date();
+  const seed = now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.getDate();
+  const rand = (a => () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; })(seed);
+  const between = (lo, hi) => lo + rand() * (hi - lo);
+  const pick = list => list[Math.floor(rand() * list.length)];
+
+  // Two-ink palettes based on real risograph inks
+  const palettes = [
+    { paper:'#FFF1F7', a:'#FF48B0', b:'#3255A4', text:'#3255A4' },
+    { paper:'#F3FBF8', a:'#FFE800', b:'#00838A', text:'#00666B' },
+    { paper:'#F2F5FF', a:'#FF6C2F', b:'#3D5588', text:'#3D5588' },
+    { paper:'#F7F4FF', a:'#00A95C', b:'#765BA7', text:'#5E468F' },
+    { paper:'#FFFFFF', a:'#FFB511', b:'#765BA7', text:'#5E468F' },
+    { paper:'#F0F9F9', a:'#FF7477', b:'#00838A', text:'#00666B' },
+    { paper:'#FFF4F4', a:'#F15060', b:'#3D5588', text:'#3D5588' },
+    { paper:'#F1FAFB', a:'#FF48B0', b:'#00838A', text:'#00666B' }
+  ];
+  const p = pick(palettes);
+  const root = document.documentElement.style;
+  root.setProperty('--paper', p.paper);
+  root.setProperty('--a', p.a);
+  root.setProperty('--b', p.b);
+  root.setProperty('--text', p.text);
+  root.setProperty('--dx', between(-9, 9).toFixed(1) + 'px');
+  root.setProperty('--dy', between(-7, 7).toFixed(1) + 'px');
+  root.setProperty('--rot', between(-18, 18).toFixed(1) + 'deg');
+
+  // Date
+  document.getElementById('wd').textContent = now.toLocaleDateString(undefined, { weekday: 'long' });
+  document.getElementById('numA').textContent = now.getDate();
+  document.getElementById('numB').textContent = now.getDate();
+  document.getElementById('mo').textContent = now.toLocaleDateString(undefined, { month: 'long' });
+
+  // Sticker greeting
+  const h = now.getHours();
+  const greet = (h < 5 || h >= 21) ? 'night reading' : h < 12 ? 'good morning' : h < 17 ? 'good afternoon' : 'good evening';
+  document.getElementById('ringText').textContent = (greet + ' ✦ ').repeat(2);
+
+  // Button
+  const isFolder = LINK.includes('/folders/');
   const open = document.getElementById('open');
   open.href = LINK;
-  open.textContent = LINK.includes('/folders/') ? 'Open the study folder' : "Open today's PDF";
+  open.textContent = isFolder ? 'Open the study folder' : "Open today's PDF";
+  document.getElementById('status').textContent = isFolder
+    ? "Today's PDF is waiting in your study folder."
+    : "Today's PDF is ready.";
 
-  document.getElementById('today').textContent =
-    new Date().toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' });
+  // Generative shapes
+  const svg = document.getElementById('art');
+  const NS = 'http://www.w3.org/2000/svg';
+  const el = (tag, attrs) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); return e; };
+
+  const defs = el('defs', {});
+  const stripes = el('pattern', { id:'stripes', width:4, height:4, patternUnits:'userSpaceOnUse',
+                                  patternTransform:'rotate(' + Math.round(between(0, 180)) + ')' });
+  stripes.append(el('rect', { width:2, height:4, fill:p.b }));
+  const dots = el('pattern', { id:'dots', width:3, height:3, patternUnits:'userSpaceOnUse' });
+  dots.append(el('circle', { cx:1.5, cy:1.5, r:.8, fill:p.a }));
+  defs.append(stripes, dots);
+  svg.append(defs);
+
+  const fills = [p.a, p.b, 'url(#stripes)', 'url(#dots)'];
+  const makers = [
+    () => el('circle', { cx:between(0,100), cy:between(0,160), r:between(10,30) }),
+    () => { const x = between(0,100), y = between(0,160), s = between(14,34);
+            return el('path', { d:`M${x-s} ${y} A${s} ${s} 0 0 1 ${x+s} ${y} Z` }); },
+    () => { const x = between(-10,90), y = between(0,140), w = between(18,40), hh = between(30,70);
+            return el('path', { d:`M${x} ${y+hh} V${y+w/2} A${w/2} ${w/2} 0 0 1 ${x+w} ${y+w/2} V${y+hh} Z` }); },
+    () => { const x = between(10,90), y = between(10,150), R = between(8,16), pts = [];
+            for (let i = 0; i < 16; i++) { const rad = i % 2 ? R * .55 : R, ang = i * Math.PI / 8;
+              pts.push((x + rad * Math.cos(ang)).toFixed(1) + ',' + (y + rad * Math.sin(ang)).toFixed(1)); }
+            return el('polygon', { points:pts.join(' ') }); },
+    () => { const x = between(-5,55), y = between(0,160), pts = [];
+            for (let i = 0; i < 9; i++) pts.push((x + i * 5) + ',' + (y + (i % 2 ? 6 : 0)));
+            return el('polyline', { points:pts.join(' '), fill:'none', 'stroke-width':2.2, 'stroke-linejoin':'round', stroke:pick([p.a, p.b]) }); },
+    () => { const x = between(-10,55), y = between(0,160); let d = `M${x} ${y}`;
+            for (let i = 0; i < 5; i++) d += ' q 4 -6 8 0 t 8 0';
+            return el('path', { d, fill:'none', 'stroke-width':2.2, 'stroke-linecap':'round', stroke:pick([p.a, p.b]) }); }
+  ];
+
+  const shapes = [el('circle', { cx:between(20,80), cy:between(20,140), r:between(28,40) })];
+  for (let i = 0; i < 7; i++) shapes.push(pick(makers)());
+  shapes.forEach((s, i) => {
+    if (!s.getAttribute('stroke')) s.setAttribute('fill', pick(fills));
+    s.setAttribute('transform', `rotate(${between(-30,30).toFixed(1)} 50 80)`);
+    s.style.animationDelay = (i * 70) + 'ms';
+    svg.append(s);
+  });
 </script>
 </body>
 </html>
